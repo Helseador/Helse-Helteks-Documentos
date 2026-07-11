@@ -392,6 +392,9 @@
 <script src="firebase-config.js"></script>
 <!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
 // ===== INIT =====
@@ -598,7 +601,7 @@ async function loadHistorial() {
             <button class="btn-green" onclick="copyLinkHist('${doc.id}')">📋 Link</button>
             <button class="btn-danger" style="margin-left:4px" onclick="revocarDoc('${doc.id}')">Revocar</button>
           ` : `
-            <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="verFirmado('${doc.id}')">Ver</button>
+            <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="verFirmado('${doc.id}')">👁 Ver</button> <button class="btn-green" style="margin-left:4px" onclick="descargarPDF('${doc.id}')">⬇️ PDF</button>
           `}
         </td>
       </tr>`;
@@ -704,6 +707,106 @@ function hideAlert() {
 // ===== LOGOUT =====
 function logout() {
   auth.signOut().then(() => window.location.href = 'index.html');
+}
+
+
+// ===== DESCARGAR PDF =====
+async function descargarPDF(id) {
+  const snap = await db.collection('documentos').doc(id).get();
+  const d = snap.data();
+  const { jsPDF } = window.jspdf;
+
+  // Contenedor temporal oculto para renderizar
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;padding:48px;background:#fff;font-family:Arial,sans-serif;font-size:13px;line-height:1.8;color:#1e293b;';
+
+  const fmt = n => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0}).format(n||0);
+
+  let body = '';
+
+  if (d.tipoKey === 'contrato') {
+    body = `
+      <h2 style="text-align:center;font-size:14px;text-transform:uppercase;margin-bottom:20px;color:#0a2540">Contrato Individual de Trabajo por Duración de Obra o Labor Contratada</h2>
+      <p style="margin-bottom:12px">Entre los suscritos: por una parte, <strong>YORMAN JAVIER MONROY TRUJILLO</strong>, representante legal de <strong>GRUPO HELSE SAS</strong> (NIT 901401880), domiciliada en Bogotá (<strong>EL EMPLEADOR</strong>); y por otra, <strong>${d.nombre}</strong>, cédula <strong>${d.cedula}</strong>, domiciliado(a) en <strong>${d.ciudad}</strong> (<strong>EL TRABAJADOR</strong>).</p>
+      <p style="margin-bottom:10px"><strong>ARTÍCULO PRIMERO. OBJETO:</strong> El TRABAJADOR desempeñará el cargo de <strong>${d.cargo}</strong> para la siguiente obra o labor: <strong>${d.actividad}</strong>.</p>
+      <p style="margin-bottom:10px"><strong>ARTÍCULO SEGUNDO. REMUNERACIÓN:</strong> Salario mensual de <strong>${fmt(d.salario)}</strong>, pagado quincenalmente.</p>
+      <p style="margin-bottom:10px"><strong>ARTÍCULO TERCERO. JORNADA:</strong> Ocho (8) horas diarias y cuarenta y cuatro (44) horas semanales (Ley 2101 de 2021).</p>
+      <p style="margin-bottom:10px"><strong>ARTÍCULO CUARTO. DURACIÓN:</strong> Por la duración de la obra o labor descrita.</p>
+      <p style="margin-bottom:20px"><em>Los artículos 5 al 12 aplican íntegramente conforme al modelo estándar de Grupo Helse SAS.</em></p>
+      <p style="margin-bottom:24px">Firmado en <strong>${d.ciudadFirma||'Bogotá'}</strong>, el <strong>${d.fecha}</strong>.</p>
+      <table style="width:100%;margin-top:8px"><tr>
+        <td style="width:50%;vertical-align:top">
+          <p><strong>YORMAN JAVIER MONROY TRUJILLO</strong></p>
+          <p style="font-size:11px;color:#64748b">EL EMPLEADOR — Grupo Helse SAS</p>
+        </td>
+        <td style="width:50%;vertical-align:top">
+          <p><strong>${d.nombre}</strong></p>
+          <p style="font-size:11px;color:#64748b">EL TRABAJADOR — C.C. ${d.cedula}</p>
+          ${d.firmaImg ? `<img src="${d.firmaImg}" style="margin-top:8px;max-width:200px;max-height:80px;border:1px solid #e2e8f0;border-radius:4px"/>` : ''}
+        </td>
+      </tr></table>`;
+  } else if (d.tipoKey === 'cuenta_ret') {
+    body = `
+      <h2 style="text-align:center;font-size:14px;text-transform:uppercase;margin-bottom:20px;color:#0a2540">Cuenta de Cobro con Retenciones</h2>
+      <p style="margin-bottom:6px"><strong>${d.ciudad||'Bogotá'}, ${d.fecha}</strong></p>
+      <p style="margin-bottom:14px"><strong>GRUPO HELSE SAS</strong> — NIT 901.401.880-4</p>
+      <p style="margin-bottom:6px"><strong>Debe a:</strong> ${d.nombre} — C.C. ${d.cedula}</p>
+      <p style="margin-bottom:6px"><strong>La suma de:</strong> ${fmt(d.valor)}</p>
+      <p style="margin-bottom:14px"><strong>Por concepto de:</strong> ${d.concepto}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+        <tr style="background:#f8fafc"><td style="padding:8px;border:1px solid #e2e8f0">Valor del servicio</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">${fmt(d.valor)}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e2e8f0">Retención en la fuente (${d.ret}%)</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">− ${fmt(d.descRet)}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e2e8f0">ReteICA (${d.ica}%)</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">− ${fmt(d.descIca)}</td></tr>
+        <tr style="background:#f0fdf4;font-weight:700"><td style="padding:8px;border:1px solid #e2e8f0">TOTAL A PAGAR</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">${fmt(d.total)}</td></tr>
+      </table>
+      <p style="margin-bottom:8px">Cordialmente,</p>
+      <p><strong>${d.nombre}</strong> — C.C. ${d.cedula}</p>
+      ${d.firmaImg ? `<img src="${d.firmaImg}" style="margin-top:12px;max-width:200px;max-height:80px;border:1px solid #e2e8f0;border-radius:4px"/>` : ''}
+      <p style="font-size:11px;color:#64748b;margin-top:6px">Firmado el ${d.firmadoEn?.toDate().toLocaleString('es-CO')||'-'} — ${d.firmante?.tipoDoc||''} ${d.firmante?.numDoc||''}</p>`;
+  } else {
+    body = `
+      <h2 style="text-align:center;font-size:14px;text-transform:uppercase;margin-bottom:20px;color:#0a2540">Cuenta de Cobro</h2>
+      <p style="margin-bottom:6px"><strong>${d.ciudad||'Bogotá'}, ${d.fecha}</strong></p>
+      <p style="margin-bottom:14px"><strong>GRUPO HELSE SAS</strong> — NIT 901.401.880-4</p>
+      <p style="margin-bottom:6px"><strong>Debe a:</strong> ${d.nombre} — C.C. ${d.cedula}</p>
+      <p style="margin-bottom:14px"><strong>Por concepto de:</strong> ${d.concepto}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+        <tr style="background:#f8fafc"><td style="padding:8px;border:1px solid #e2e8f0">${d.concepto}</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">${fmt(d.total)}</td></tr>
+        <tr style="background:#f0fdf4;font-weight:700"><td style="padding:8px;border:1px solid #e2e8f0">TOTAL A PAGAR</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">${fmt(d.total)}</td></tr>
+      </table>
+      <p style="margin-bottom:8px">Cordialmente,</p>
+      <p><strong>${d.nombre}</strong> — C.C. ${d.cedula}</p>
+      ${d.firmaImg ? `<img src="${d.firmaImg}" style="margin-top:12px;max-width:200px;max-height:80px;border:1px solid #e2e8f0;border-radius:4px"/>` : ''}
+      <p style="font-size:11px;color:#64748b;margin-top:6px">Firmado el ${d.firmadoEn?.toDate().toLocaleString('es-CO')||'-'} — ${d.firmante?.tipoDoc||''} ${d.firmante?.numDoc||''}</p>`;
+  }
+
+  container.innerHTML = body;
+  document.body.appendChild(container);
+
+  try {
+    const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW  = pageW;
+    const imgH  = (canvas.height * imgW) / canvas.width;
+
+    let yPos = 0;
+    let remainH = imgH;
+    while (remainH > 0) {
+      pdf.addImage(imgData, 'PNG', 0, -yPos, imgW, imgH);
+      remainH -= pageH;
+      yPos    += pageH;
+      if (remainH > 0) pdf.addPage();
+    }
+
+    const nombreArchivo = (d.nombre || 'documento').replace(/\s+/g, '_');
+    const tipoCorto = d.tipoKey === 'contrato' ? 'Contrato' : 'CuentaCobro';
+    pdf.save(`${tipoCorto}_${nombreArchivo}_${d.fecha?.replace(/\s+/g,'_') || 'sin_fecha'}.pdf`);
+  } finally {
+    document.body.removeChild(container);
+  }
 }
 
 // Cerrar modal con ESC
