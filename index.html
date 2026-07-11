@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- By TesJua -->
+  <title>Documentos Helse & Helteks — Acceso</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a2540 0%, #1a4a7a 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 48px 40px 40px;
+      width: 100%; max-width: 420px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.3);
+    }
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo img { height: 56px; margin-bottom: 12px; display: block; margin-inline: auto; }
+    .logo h1 { font-size: 22px; color: #0a2540; font-weight: 700; }
+    .logo p { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+    label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0;
+      border-radius: 8px; font-size: 15px; color: #111;
+      transition: border-color .2s;
+      margin-bottom: 18px;
+    }
+    input:focus { outline: none; border-color: #2563eb; }
+    .btn {
+      width: 100%; padding: 13px;
+      background: #2563eb; color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn:disabled { background: #93c5fd; cursor: not-allowed; }
+    .error {
+      background: #fef2f2; border: 1px solid #fecaca;
+      color: #b91c1c; border-radius: 8px;
+      padding: 10px 14px; font-size: 13px;
+      margin-bottom: 16px; display: none;
+    }
+    .footer { text-align: center; margin-top: 28px; font-size: 12px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <h1>Documentos Helse & Helteks</h1>
+    <p>Sistema de documentos y firmas digitales</p>
+  </div>
+
+  <div class="error" id="errorMsg"></div>
+
+  <label for="email">Correo electrónico</label>
+  <input type="email" id="email" placeholder="usuario@helse.com.co" autocomplete="username"/>
+
+  <label for="password">Contraseña</label>
+  <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"/>
+
+  <button class="btn" id="btnLogin" onclick="login()">Ingresar</button>
+
+  <div class="footer">Grupo Helse SAS &nbsp;·&nbsp; Uso exclusivo interno</div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const auth = firebase.auth();
+
+  // Si ya está autenticado, redirige directo
+  auth.onAuthStateChanged(u => { if (u) window.location.href = 'dashboard.html'; });
+
+  function login() {
+    const email = document.getElementById('email').value.trim();
+    const pass  = document.getElementById('password').value;
+    const btn   = document.getElementById('btnLogin');
+    const err   = document.getElementById('errorMsg');
+
+    if (!email || !pass) { showError('Completa todos los campos.'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Ingresando…';
+    err.style.display = 'none';
+
+    auth.signInWithEmailAndPassword(email, pass)
+      .then(() => window.location.href = 'dashboard.html')
+      .catch(e => {
+        btn.disabled = false;
+        btn.textContent = 'Ingresar';
+        showError(mapError(e.code));
+      });
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function mapError(code) {
+    const map = {
+      'auth/user-not-found': 'Correo no registrado.',
+      'auth/wrong-password': 'Contraseña incorrecta.',
+      'auth/invalid-email': 'Correo inválido.',
+      'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde.',
+      'auth/invalid-credential': 'Credenciales incorrectas.'
+    };
+    return map[code] || 'Error al ingresar. Verifica tus datos.';
+  }
+
+  // Enter para login
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+</script>
+</body>
+</html>

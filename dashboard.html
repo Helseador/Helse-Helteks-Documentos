@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- By TesJua -->
+  <title>Documentos Helse & Helteks — Dashboard</title>
+  <style>
+    /* ===== RESET & BASE ===== */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:#f1f5f9; color:#1e293b; min-height:100vh; }
+
+    /* ===== NAVBAR ===== */
+    nav {
+      background:#0a2540; color:#fff;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 28px; height:60px;
+      position:sticky; top:0; z-index:100;
+      box-shadow:0 2px 8px rgba(0,0,0,.3);
+    }
+    .nav-brand { font-size:18px; font-weight:700; letter-spacing:.3px; }
+    .nav-brand span { color:#60a5fa; }
+    .nav-right { display:flex; align-items:center; gap:16px; }
+    .nav-user { font-size:13px; color:#94a3b8; }
+    .btn-logout {
+      background:transparent; border:1px solid #334155;
+      color:#94a3b8; padding:6px 14px; border-radius:6px;
+      font-size:13px; cursor:pointer; transition:all .2s;
+    }
+    .btn-logout:hover { border-color:#60a5fa; color:#60a5fa; }
+
+    /* ===== MAIN ===== */
+    main { max-width:1100px; margin:0 auto; padding:32px 20px; }
+
+    /* ===== TABS ===== */
+    .tabs { display:flex; gap:4px; margin-bottom:28px; background:#e2e8f0; border-radius:10px; padding:4px; width:fit-content; }
+    .tab {
+      padding:8px 22px; border-radius:8px; border:none;
+      font-size:14px; font-weight:500; cursor:pointer;
+      background:transparent; color:#64748b; transition:all .2s;
+    }
+    .tab.active { background:#fff; color:#0a2540; font-weight:600; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+
+    /* ===== SECTION ===== */
+    .section { display:none; }
+    .section.active { display:block; }
+
+    /* ===== CARD ===== */
+    .card {
+      background:#fff; border-radius:12px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08);
+      padding:28px;
+    }
+    .card-title { font-size:17px; font-weight:700; color:#0a2540; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+
+    /* ===== FORM ===== */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .form-full { grid-column:1/-1; }
+    .form-group { display:flex; flex-direction:column; gap:6px; }
+    label.fl { font-size:13px; font-weight:600; color:#374151; }
+    input.fi, select.fi, textarea.fi {
+      padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:8px;
+      font-size:14px; color:#111; background:#fff;
+      transition:border-color .2s; font-family:inherit;
+    }
+    input.fi:focus, select.fi:focus, textarea.fi:focus { outline:none; border-color:#2563eb; }
+    textarea.fi { resize:vertical; min-height:80px; }
+
+    /* ===== DOC TYPE SELECTOR ===== */
+    .doc-types { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px; }
+    .doc-type-btn {
+      border:2px solid #e2e8f0; border-radius:10px; padding:18px 16px;
+      background:#fff; cursor:pointer; text-align:left; transition:all .2s;
+    }
+    .doc-type-btn:hover { border-color:#2563eb; background:#eff6ff; }
+    .doc-type-btn.selected { border-color:#2563eb; background:#eff6ff; }
+    .doc-type-btn .icon { font-size:26px; margin-bottom:6px; }
+    .doc-type-btn .name { font-size:14px; font-weight:700; color:#0a2540; }
+    .doc-type-btn .desc { font-size:12px; color:#64748b; margin-top:2px; }
+
+    /* ===== FORM SECTIONS ===== */
+    .form-section { display:none; }
+    .form-section.active { display:block; }
+    .form-divider { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:#94a3b8; margin:20px 0 12px; border-bottom:1px solid #f1f5f9; padding-bottom:6px; }
+
+    /* ===== BUTTONS ===== */
+    .btn-primary {
+      background:#2563eb; color:#fff; border:none;
+      padding:12px 28px; border-radius:8px; font-size:15px; font-weight:600;
+      cursor:pointer; transition:background .2s;
+    }
+    .btn-primary:hover { background:#1d4ed8; }
+    .btn-primary:disabled { background:#93c5fd; cursor:not-allowed; }
+    .btn-secondary {
+      background:#f1f5f9; color:#374151; border:1.5px solid #e2e8f0;
+      padding:10px 20px; border-radius:8px; font-size:14px; font-weight:500;
+      cursor:pointer; transition:all .2s;
+    }
+    .btn-secondary:hover { background:#e2e8f0; }
+    .btn-danger { background:#ef4444; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-size:13px; cursor:pointer; }
+    .btn-danger:hover { background:#dc2626; }
+    .btn-green { background:#16a34a; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-size:13px; cursor:pointer; }
+    .btn-green:hover { background:#15803d; }
+
+    .actions { display:flex; gap:12px; margin-top:24px; align-items:center; flex-wrap:wrap; }
+
+    /* ===== ALERT ===== */
+    .alert {
+      padding:12px 16px; border-radius:8px; font-size:14px;
+      margin-bottom:16px; display:none; align-items:center; gap:8px;
+    }
+    .alert.success { background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; display:flex; }
+    .alert.error   { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; display:flex; }
+    .alert.info    { background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; display:flex; }
+
+    /* ===== LINK BOX ===== */
+    .link-box {
+      background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:8px;
+      padding:14px 16px; margin-top:16px; display:none;
+    }
+    .link-box p { font-size:13px; color:#64748b; margin-bottom:8px; }
+    .link-row { display:flex; gap:8px; align-items:center; }
+    .link-input {
+      flex:1; padding:9px 12px; border:1px solid #e2e8f0; border-radius:6px;
+      font-size:13px; background:#fff; color:#374151;
+    }
+    .btn-copy {
+      background:#0a2540; color:#fff; border:none; padding:9px 16px; border-radius:6px; font-size:13px; cursor:pointer;
+    }
+    .btn-copy:hover { background:#1a4a7a; }
+
+    /* ===== TABLE ===== */
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    thead th { background:#f8fafc; padding:10px 14px; text-align:left; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; border-bottom:2px solid #e2e8f0; }
+    tbody td { padding:12px 14px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover td { background:#f8fafc; }
+
+    /* ===== BADGE ===== */
+    .badge {
+      display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;
+    }
+    .badge-pending  { background:#fef9c3; color:#854d0e; }
+    .badge-signed   { background:#dcfce7; color:#166534; }
+    .badge-expired  { background:#f1f5f9; color:#94a3b8; }
+
+    /* ===== PREVIEW MODAL ===== */
+    .modal-overlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+      z-index:1000; align-items:center; justify-content:center;
+    }
+    .modal-overlay.open { display:flex; }
+    .modal {
+      background:#fff; border-radius:14px; padding:32px;
+      width:90%; max-width:700px; max-height:85vh; overflow-y:auto;
+      box-shadow:0 24px 64px rgba(0,0,0,.3);
+    }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .modal-title { font-size:17px; font-weight:700; }
+    .btn-close { background:none; border:none; font-size:22px; cursor:pointer; color:#64748b; }
+
+    /* ===== DOC PREVIEW ===== */
+    .doc-preview {
+      border:1px solid #e2e8f0; border-radius:8px; padding:24px;
+      font-size:13px; line-height:1.8; color:#374151;
+    }
+    .doc-preview h2 { font-size:14px; text-align:center; color:#0a2540; margin-bottom:16px; }
+    .doc-preview p { margin-bottom:8px; }
+    .doc-preview .field-val { font-weight:700; color:#0a2540; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty { text-align:center; padding:48px 20px; color:#94a3b8; }
+    .empty .icon { font-size:48px; margin-bottom:12px; }
+    .empty p { font-size:15px; }
+
+    /* ===== LOADING ===== */
+    .spinner { display:inline-block; width:16px; height:16px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    @media(max-width:640px) {
+      .form-grid { grid-template-columns:1fr; }
+      .doc-types { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-brand">Documentos <span>Helse & Helteks</span></div>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser"></span>
+    <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+  </div>
+</nav>
+
+<main>
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('nuevo',this)">➕ Nuevo documento</button>
+    <button class="tab" onclick="switchTab('historial',this)">📋 Historial</button>
+  </div>
+
+  <!-- ========== TAB: NUEVO ========== -->
+  <div class="section active" id="tab-nuevo">
+    <div class="card">
+      <div class="card-title">📄 Selecciona el tipo de documento</div>
+
+      <div class="doc-types">
+        <button class="doc-type-btn" onclick="selectDoc('contrato',this)">
+          <div class="icon">📑</div>
+          <div class="name">Contrato Laboral</div>
+          <div class="desc">Obra o labor contratada</div>
+        </button>
+        <button class="doc-type-btn" onclick="selectDoc('cuenta_ret',this)">
+          <div class="icon">🧾</div>
+          <div class="name">Cuenta de Cobro con Retenciones</div>
+          <div class="desc">Con retención en la fuente y ReteICA</div>
+        </button>
+        <button class="doc-type-btn" onclick="selectDoc('cuenta_sin',this)">
+          <div class="icon">🧾</div>
+          <div class="name">Cuenta de Cobro sin Retenciones</div>
+          <div class="desc">Pago directo sin descuentos tributarios</div>
+        </button>
+      </div>
+
+      <!-- FORM: CONTRATO -->
+      <div class="form-section" id="form-contrato">
+        <div class="form-divider">Datos del trabajador</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="fl">Nombre completo del trabajador *</label>
+            <input class="fi" id="c_nombre" placeholder="Ej: María Camila Torres"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Cédula de ciudadanía *</label>
+            <input class="fi" id="c_cedula" placeholder="Ej: 1030512345"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Ciudad de domicilio *</label>
+            <input class="fi" id="c_ciudad" placeholder="Ej: Bogotá"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Correo del trabajador *</label>
+            <input class="fi" id="c_email" type="email" placeholder="trabajador@email.com"/>
+          </div>
+        </div>
+        <div class="form-divider">Detalles del contrato</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="fl">Cargo *</label>
+            <input class="fi" id="c_cargo" placeholder="Ej: Coordinador de campo"/>
+          </div>
+          <div class="form-group form-full">
+            <label class="fl">Actividad / Descripción de la obra o labor *</label>
+            <textarea class="fi" id="c_actividad" placeholder="Describe la actividad específica a realizar…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="fl">Salario mensual (COP) *</label>
+            <input class="fi" id="c_salario" placeholder="Ej: 1423500"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Ciudad de firma</label>
+            <input class="fi" id="c_ciudad_firma" placeholder="Bogotá" value="Bogotá"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORM: CUENTA CON RETENCIONES -->
+      <div class="form-section" id="form-cuenta_ret">
+        <div class="form-divider">Datos del beneficiario</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="fl">Nombre completo *</label>
+            <input class="fi" id="r_nombre" placeholder="Nombre del contratista"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Cédula de ciudadanía *</label>
+            <input class="fi" id="r_cedula" placeholder="Ej: 79843590"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Correo del beneficiario *</label>
+            <input class="fi" id="r_email" type="email" placeholder="contratista@email.com"/>
+          </div>
+        </div>
+        <div class="form-divider">Detalles del cobro</div>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label class="fl">Concepto / descripción del servicio *</label>
+            <textarea class="fi" id="r_concepto" placeholder="Ej: Pago nómina supervisión…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="fl">Valor del servicio (COP) *</label>
+            <input class="fi" id="r_valor" placeholder="Ej: 665000" type="number"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">% Retención en la fuente</label>
+            <input class="fi" id="r_retencion" placeholder="6" type="number" value="6"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">% ReteICA</label>
+            <input class="fi" id="r_reteica" placeholder="9.66" type="number" value="9.66"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Ciudad</label>
+            <input class="fi" id="r_ciudad" placeholder="Bogotá" value="Bogotá"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORM: CUENTA SIN RETENCIONES -->
+      <div class="form-section" id="form-cuenta_sin">
+        <div class="form-divider">Datos del beneficiario</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="fl">Nombre completo *</label>
+            <input class="fi" id="s_nombre" placeholder="Nombre del contratista"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Cédula de ciudadanía *</label>
+            <input class="fi" id="s_cedula" placeholder="Ej: 1000332731"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Correo del beneficiario *</label>
+            <input class="fi" id="s_email" type="email" placeholder="contratista@email.com"/>
+          </div>
+        </div>
+        <div class="form-divider">Detalles del cobro</div>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label class="fl">Concepto / descripción del servicio *</label>
+            <textarea class="fi" id="s_concepto" placeholder="Ej: Logísticos y actores partidos…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="fl">Valor total a pagar (COP) *</label>
+            <input class="fi" id="s_valor" placeholder="Ej: 60000" type="number"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Ciudad</label>
+            <input class="fi" id="s_ciudad" placeholder="Bogotá" value="Bogotá"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERT -->
+      <div class="alert" id="dashAlert"></div>
+
+      <!-- ACCIONES -->
+      <div class="actions" id="formActions" style="display:none">
+        <button class="btn-primary" id="btnGenerar" onclick="generarDocumento()">Generar y enviar link</button>
+        <button class="btn-secondary" onclick="previewDoc()">👁 Vista previa</button>
+      </div>
+
+      <!-- LINK GENERADO -->
+      <div class="link-box" id="linkBox">
+        <p>✅ Link generado. Cópialo y envíalo al beneficiario:</p>
+        <div class="link-row">
+          <input class="link-input" id="linkInput" readonly/>
+          <button class="btn-copy" onclick="copyLink()">Copiar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== TAB: HISTORIAL ========== -->
+  <div class="section" id="tab-historial">
+    <div class="card">
+      <div class="card-title">📋 Historial de documentos</div>
+      <div id="historialContent">
+        <div class="empty"><div class="icon">📂</div><p>Cargando historial…</p></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL PREVIEW -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Vista previa del documento</span>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="doc-preview" id="previewContent"></div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script>
+// ===== INIT =====
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+emailjs.init(EMAILJS_CONFIG.publicKey);
+
+let currentUser = null;
+let selectedDocType = null;
+
+auth.onAuthStateChanged(u => {
+  if (!u) { window.location.href = 'index.html'; return; }
+  currentUser = u;
+  document.getElementById('navUser').textContent = u.email;
+  loadHistorial();
+});
+
+// ===== TABS =====
+function switchTab(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'historial') loadHistorial();
+}
+
+// ===== DOC TYPE SELECTION =====
+function selectDoc(type, btn) {
+  document.querySelectorAll('.doc-type-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+  btn.classList.add('selected');
+  selectedDocType = type;
+  document.getElementById('form-'+type).classList.add('active');
+  document.getElementById('formActions').style.display = 'flex';
+  document.getElementById('linkBox').style.display = 'none';
+  hideAlert();
+}
+
+// ===== VALIDACIONES =====
+function validate() {
+  const t = selectedDocType;
+  const fields = {
+    contrato:   ['c_nombre','c_cedula','c_ciudad','c_email','c_cargo','c_actividad','c_salario'],
+    cuenta_ret: ['r_nombre','r_cedula','r_email','r_concepto','r_valor'],
+    cuenta_sin: ['s_nombre','s_cedula','s_email','s_concepto','s_valor']
+  };
+  for (const id of (fields[t]||[])) {
+    const el = document.getElementById(id);
+    if (!el || !el.value.trim()) { el && el.focus(); return false; }
+  }
+  return true;
+}
+
+// ===== RECOLECTAR DATOS =====
+function getData() {
+  const v = id => document.getElementById(id)?.value.trim() || '';
+  const n = id => parseFloat(document.getElementById(id)?.value) || 0;
+  const t = selectedDocType;
+  const today = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+
+  if (t === 'contrato') {
+    return {
+      tipo: 'Contrato Laboral (Obra o Labor)',
+      tipoKey: 'contrato',
+      fecha: today,
+      nombre: v('c_nombre'), cedula: v('c_cedula'),
+      ciudad: v('c_ciudad'), email: v('c_email'),
+      cargo: v('c_cargo'), actividad: v('c_actividad'),
+      salario: n('c_salario'), ciudadFirma: v('c_ciudad_firma') || 'Bogotá',
+    };
+  }
+  if (t === 'cuenta_ret') {
+    const valor = n('r_valor');
+    const ret   = n('r_retencion');
+    const ica   = n('r_reteica');
+    const descRet = Math.round(valor * ret / 100);
+    const descIca = Math.round(valor * ica / 100);
+    return {
+      tipo: 'Cuenta de Cobro con Retenciones',
+      tipoKey: 'cuenta_ret',
+      fecha: today,
+      nombre: v('r_nombre'), cedula: v('r_cedula'), email: v('r_email'),
+      concepto: v('r_concepto'), ciudad: v('r_ciudad') || 'Bogotá',
+      valor, ret, ica, descRet, descIca,
+      total: valor - descRet - descIca,
+    };
+  }
+  if (t === 'cuenta_sin') {
+    return {
+      tipo: 'Cuenta de Cobro sin Retenciones',
+      tipoKey: 'cuenta_sin',
+      fecha: today,
+      nombre: v('s_nombre'), cedula: v('s_cedula'), email: v('s_email'),
+      concepto: v('s_concepto'), ciudad: v('s_ciudad') || 'Bogotá',
+      total: n('s_valor'),
+    };
+  }
+}
+
+// ===== GENERAR DOCUMENTO =====
+async function generarDocumento() {
+  if (!selectedDocType) { showAlert('Selecciona un tipo de documento.','error'); return; }
+  if (!validate()) { showAlert('Completa todos los campos obligatorios (*)','error'); return; }
+
+  const btn = document.getElementById('btnGenerar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Generando…';
+  hideAlert();
+
+  try {
+    const data = getData();
+    // Token único de 20 chars
+    const token = Math.random().toString(36).slice(2,12) + Math.random().toString(36).slice(2,12);
+
+    // Guardamos en Firestore
+    await db.collection('documentos').doc(token).set({
+      ...data,
+      token,
+      estado: 'pendiente',
+      creadoPor: currentUser.email,
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+      firmadoEn: null,
+      firmante: null,
+      firmaImg: null,
+      docTipoNombre: data.tipo,
+    });
+
+    const link = `${BASE_URL}/firmar.html?t=${token}`;
+    document.getElementById('linkInput').value = link;
+    document.getElementById('linkBox').style.display = 'block';
+
+    // Enviar email por EmailJS
+    try {
+      await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+        to_name:  data.nombre,
+        to_email: data.email,
+        doc_tipo: data.tipo,
+        sign_link: link,
+        empresa:  'Grupo Helse SAS',
+      });
+      showAlert('✅ Documento generado y correo enviado a ' + data.email, 'success');
+    } catch(emailErr) {
+      console.warn('EmailJS error:', emailErr);
+      showAlert('⚠️ Documento generado pero hubo un error enviando el correo. Copia el link manualmente.', 'info');
+    }
+
+  } catch(e) {
+    console.error(e);
+    showAlert('Error al generar el documento: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generar y enviar link';
+  }
+}
+
+function copyLink() {
+  const val = document.getElementById('linkInput').value;
+  navigator.clipboard.writeText(val).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+  });
+}
+
+// ===== VISTA PREVIA =====
+function previewDoc() {
+  if (!selectedDocType || !validate()) { showAlert('Completa los datos primero.','error'); return; }
+  const data = getData();
+  document.getElementById('previewContent').innerHTML = buildDocHTML(data);
+  document.getElementById('previewModal').classList.add('open');
+}
+function closeModal() { document.getElementById('previewModal').classList.remove('open'); }
+
+// ===== HISTORIAL =====
+async function loadHistorial() {
+  const el = document.getElementById('historialContent');
+  el.innerHTML = '<div class="empty"><div class="icon">⏳</div><p>Cargando…</p></div>';
+  try {
+    const snap = await db.collection('documentos')
+      .orderBy('creadoEn','desc').limit(50).get();
+    if (snap.empty) {
+      el.innerHTML = '<div class="empty"><div class="icon">📂</div><p>No hay documentos todavía.</p></div>';
+      return;
+    }
+    let rows = '';
+    snap.forEach(doc => {
+      const d = doc.data();
+      const badge = d.estado === 'firmado'
+        ? '<span class="badge badge-signed">Firmado</span>'
+        : d.estado === 'expirado'
+        ? '<span class="badge badge-expired">Expirado</span>'
+        : '<span class="badge badge-pending">Pendiente</span>';
+      const fecha = d.creadoEn?.toDate().toLocaleDateString('es-CO') || '-';
+      const firmFecha = d.firmadoEn?.toDate().toLocaleDateString('es-CO') || '-';
+      rows += `<tr>
+        <td>${d.docTipoNombre||d.tipo||'-'}</td>
+        <td><strong>${d.nombre||'-'}</strong><br><small style="color:#64748b">${d.cedula||''}</small></td>
+        <td>${fecha}</td>
+        <td>${badge}</td>
+        <td>${d.estado==='firmado'?firmFecha:'-'}</td>
+        <td>
+          ${d.estado==='pendiente' ? `
+            <button class="btn-green" onclick="copyLinkHist('${doc.id}')">📋 Link</button>
+            <button class="btn-danger" style="margin-left:4px" onclick="revocarDoc('${doc.id}')">Revocar</button>
+          ` : `
+            <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="verFirmado('${doc.id}')">Ver</button>
+          `}
+        </td>
+      </tr>`;
+    });
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr>
+        <th>Tipo</th><th>Beneficiario</th><th>Creado</th><th>Estado</th><th>Firmado</th><th>Acciones</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="alert error" style="display:flex">Error cargando historial: ${e.message}</div>`;
+  }
+}
+
+async function revocarDoc(id) {
+  if (!confirm('¿Revocar este documento? El link quedará inutilizable.')) return;
+  await db.collection('documentos').doc(id).update({ estado:'expirado' });
+  loadHistorial();
+}
+
+function copyLinkHist(token) {
+  const link = `${BASE_URL}/firmar.html?t=${token}`;
+  navigator.clipboard.writeText(link).then(() => alert('Link copiado:\n'+link));
+}
+
+async function verFirmado(id) {
+  const snap = await db.collection('documentos').doc(id).get();
+  const d = snap.data();
+  let html = buildDocHTML(d);
+  if (d.firmaImg) {
+    html += `<div style="margin-top:20px;border-top:1px solid #e2e8f0;padding-top:16px">
+      <p><strong>Firma del beneficiario:</strong></p>
+      <img src="${d.firmaImg}" style="border:1px solid #e2e8f0;border-radius:6px;max-width:300px;margin-top:8px"/>
+      <p style="margin-top:8px;font-size:12px;color:#64748b">Firmado el ${d.firmadoEn?.toDate().toLocaleString('es-CO')||'-'}</p>
+      <p style="font-size:12px;color:#64748b">Tipo doc firmante: ${d.firmante?.tipoDoc||'-'} — No: ${d.firmante?.numDoc||'-'}</p>
+    </div>`;
+  }
+  document.getElementById('previewContent').innerHTML = html;
+  document.getElementById('previewModal').classList.add('open');
+}
+
+// ===== BUILD DOC HTML =====
+function buildDocHTML(d) {
+  const fmt = n => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0}).format(n);
+  if (d.tipoKey === 'contrato') {
+    return `<h2>CONTRATO INDIVIDUAL DE TRABAJO POR DURACIÓN DE OBRA O LABOR CONTRATADA</h2>
+<p>Entre los suscritos, a saber: por una parte, <span class="field-val">YORMAN JAVIER MONROY TRUJILLO</span>, en calidad de representante legal de la sociedad denominada <span class="field-val">GRUPO HELSE SAS</span>, identificada con NIT 901401880, con domicilio en BOGOTA, quien en adelante se denominará <strong>EL EMPLEADOR</strong>; y por otra, el(la) señor(a) <span class="field-val">${d.nombre}</span>, identificado(a) con la cédula de ciudadanía No. <span class="field-val">${d.cedula}</span>, con domicilio en <span class="field-val">${d.ciudad}</span>, quien para los mismos efectos se denominará <strong>EL TRABAJADOR</strong>, se ha convenido celebrar el presente CONTRATO INDIVIDUAL DE TRABAJO POR DURACIÓN DE OBRA O LABOR.</p>
+<p><strong>ARTÍCULO PRIMERO. OBJETO:</strong> El EMPLEADOR contrata los servicios personales del TRABAJADOR para desempeñar el cargo de <span class="field-val">${d.cargo}</span>, destinado a la ejecución de la obra o labor denominada: <span class="field-val">${d.actividad}</span>.</p>
+<p><strong>ARTÍCULO SEGUNDO. REMUNERACIÓN:</strong> El EMPLEADOR pagará al TRABAJADOR un salario mensual de <span class="field-val">${fmt(d.salario)}</span>, cancelado en períodos quincenales.</p>
+<p><strong>ARTÍCULO TERCERO. JORNADA LABORAL:</strong> La jornada laboral será de ocho (8) horas diarias y cuarenta y cuatro (44) horas semanales, conforme a la Ley 2101 de 2021.</p>
+<p><strong>ARTÍCULO CUARTO. DURACIÓN:</strong> El presente contrato se celebra por la duración de la obra o labor descrita en el artículo primero.</p>
+<p><strong>ARTÍCULO QUINTO AL DECIMOSEGUNDO:</strong> Aplican íntegramente las cláusulas del contrato estándar de Grupo Helse SAS relativas a terminación con justa causa, modificaciones, seguridad social, prestaciones sociales, obligaciones del trabajador, crédito por libranza, acoso laboral e integridad contractual.</p>
+<p style="margin-top:20px">En constancia, se firma en <span class="field-val">${d.ciudadFirma}</span> el <span class="field-val">${d.fecha}</span>.</p>
+<div style="display:flex;gap:40px;margin-top:28px">
+  <div><p><strong>YORMAN JAVIER MONROY TRUJILLO</strong></p><p style="font-size:12px;color:#64748b">EL EMPLEADOR — Grupo Helse SAS</p></div>
+  <div><p><strong>${d.nombre}</strong></p><p style="font-size:12px;color:#64748b">EL TRABAJADOR</p></div>
+</div>`;
+  }
+  if (d.tipoKey === 'cuenta_ret') {
+    return `<h2>CUENTA DE COBRO CON RETENCIONES</h2>
+<p><span class="field-val">${d.ciudad}, ${d.fecha}</span></p>
+<p style="margin-top:12px"><strong>GRUPO HELSE SAS</strong><br>NIT 901.401.880-4</p>
+<p style="margin-top:12px"><strong>DEBE A:</strong><br><span class="field-val">${d.nombre}</span><br>C.C. <span class="field-val">${d.cedula}</span></p>
+<p style="margin-top:12px"><strong>LA SUMA DE:</strong> <span class="field-val">${fmt(d.valor)}</span></p>
+<p><strong>POR CONCEPTO DE:</strong> <span class="field-val">${d.concepto}</span></p>
+<table style="width:100%;margin-top:16px;border-collapse:collapse;font-size:13px">
+  <tr style="background:#f8fafc"><td style="padding:8px;border:1px solid #e2e8f0">Valor del servicio</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">${fmt(d.valor)}</td></tr>
+  <tr><td style="padding:8px;border:1px solid #e2e8f0">Retención en la fuente (${d.ret}%)</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">- ${fmt(d.descRet)}</td></tr>
+  <tr><td style="padding:8px;border:1px solid #e2e8f0">ReteICA (${d.ica}%)</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">- ${fmt(d.descIca)}</td></tr>
+  <tr style="background:#f0fdf4;font-weight:700"><td style="padding:8px;border:1px solid #e2e8f0">TOTAL A PAGAR</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">${fmt(d.total)}</td></tr>
+</table>
+<p style="margin-top:20px">Cordialmente,<br><strong>${d.nombre}</strong><br>C.C. ${d.cedula}</p>`;
+  }
+  if (d.tipoKey === 'cuenta_sin') {
+    return `<h2>CUENTA DE COBRO</h2>
+<p><span class="field-val">${d.ciudad}, ${d.fecha}</span></p>
+<p style="margin-top:12px"><strong>GRUPO HELSE SAS</strong><br>NIT 901.401.880-4</p>
+<p style="margin-top:12px"><strong>DEBE A:</strong><br><span class="field-val">${d.nombre}</span><br>C.C. <span class="field-val">${d.cedula}</span></p>
+<p style="margin-top:12px"><strong>LA SUMA DE:</strong> <span class="field-val">${fmt(d.total)}</span></p>
+<p><strong>POR CONCEPTO DE:</strong> <span class="field-val">${d.concepto}</span></p>
+<table style="width:100%;margin-top:16px;border-collapse:collapse;font-size:13px">
+  <tr style="background:#f8fafc"><td style="padding:8px;border:1px solid #e2e8f0">${d.concepto}</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">${fmt(d.total)}</td></tr>
+  <tr style="background:#f0fdf4;font-weight:700"><td style="padding:8px;border:1px solid #e2e8f0">TOTAL A PAGAR</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:right">${fmt(d.total)}</td></tr>
+</table>
+<p style="margin-top:20px">Cordialmente,<br><strong>${d.nombre}</strong><br>C.C. ${d.cedula}</p>`;
+  }
+  return '<p>Tipo de documento no reconocido.</p>';
+}
+
+// ===== ALERTS =====
+function showAlert(msg, type) {
+  const el = document.getElementById('dashAlert');
+  el.className = 'alert ' + type;
+  el.textContent = msg;
+  el.style.display = 'flex';
+}
+function hideAlert() {
+  const el = document.getElementById('dashAlert');
+  el.style.display = 'none';
+}
+
+// ===== LOGOUT =====
+function logout() {
+  auth.signOut().then(() => window.location.href = 'index.html');
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal(); });
+</script>
+</body>
+</html>

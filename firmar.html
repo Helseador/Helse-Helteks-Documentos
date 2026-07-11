@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- By TesJua -->
+  <title>Documentos Helse & Helteks — Firma de documento</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Segoe UI',system-ui,sans-serif;
+      background:#f1f5f9; color:#1e293b; min-height:100vh;
+    }
+
+    /* HEADER */
+    header {
+      background:#0a2540; color:#fff;
+      padding:16px 24px; text-align:center;
+    }
+    header h1 { font-size:20px; font-weight:700; }
+    header p { font-size:13px; color:#94a3b8; margin-top:4px; }
+
+    /* MAIN */
+    main { max-width:780px; margin:0 auto; padding:28px 16px 60px; }
+
+    /* STATES */
+    .state { display:none; }
+    .state.active { display:block; }
+
+    /* CARD */
+    .card {
+      background:#fff; border-radius:12px;
+      box-shadow:0 1px 6px rgba(0,0,0,.1);
+      padding:28px; margin-bottom:20px;
+    }
+    .card-title { font-size:16px; font-weight:700; color:#0a2540; margin-bottom:18px; }
+
+    /* DOC */
+    .doc-body {
+      font-size:13.5px; line-height:1.9; color:#374151;
+      border:1px solid #e2e8f0; border-radius:8px; padding:24px;
+      margin-bottom:4px; background:#fafafa;
+    }
+    .doc-body h2 { font-size:14px; text-align:center; margin-bottom:16px; color:#0a2540; font-weight:800; text-transform:uppercase; }
+    .doc-body p { margin-bottom:10px; }
+    .field-val { font-weight:700; color:#0a2540; }
+    .doc-table { width:100%; border-collapse:collapse; font-size:13px; margin:12px 0; }
+    .doc-table td { padding:8px 10px; border:1px solid #e2e8f0; }
+    .doc-table .total-row { background:#f0fdf4; font-weight:700; }
+
+    /* FIRMA SECTION */
+    .firma-info { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+    label.fl { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:5px; }
+    input.fi, select.fi {
+      width:100%; padding:10px 12px; border:1.5px solid #e2e8f0;
+      border-radius:8px; font-size:14px; color:#111; transition:border-color .2s;
+    }
+    input.fi:focus, select.fi:focus { outline:none; border-color:#2563eb; }
+
+    /* CANVAS */
+    .canvas-wrap { position:relative; margin-bottom:16px; }
+    canvas#firmaCanvas {
+      border:2px dashed #cbd5e1; border-radius:8px;
+      display:block; width:100%; height:180px;
+      touch-action:none; background:#fff; cursor:crosshair;
+    }
+    canvas#firmaCanvas.signed { border-color:#16a34a; border-style:solid; }
+    .canvas-label {
+      font-size:12px; color:#94a3b8; text-align:center; margin-top:6px;
+    }
+
+    /* BUTTONS */
+    .btn-primary {
+      background:#16a34a; color:#fff; border:none;
+      padding:14px 32px; border-radius:8px; font-size:15px; font-weight:700;
+      cursor:pointer; transition:background .2s; width:100%; margin-top:8px;
+    }
+    .btn-primary:hover { background:#15803d; }
+    .btn-primary:disabled { background:#86efac; cursor:not-allowed; }
+    .btn-clear {
+      background:#f1f5f9; color:#64748b; border:1.5px solid #e2e8f0;
+      padding:8px 18px; border-radius:6px; font-size:13px;
+      cursor:pointer; margin-top:6px;
+    }
+    .btn-clear:hover { background:#e2e8f0; }
+
+    /* ALERT */
+    .alert {
+      padding:12px 16px; border-radius:8px; font-size:14px;
+      margin-bottom:16px; display:none;
+    }
+    .alert.error   { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; display:block; }
+    .alert.success { background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; display:block; }
+
+    /* SPINNER */
+    .spinner { display:inline-block; width:18px; height:18px; border:2.5px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:8px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* SUCCESS STATE */
+    .success-state { text-align:center; padding:56px 20px; }
+    .success-icon { font-size:72px; margin-bottom:20px; }
+    .success-state h2 { font-size:24px; font-weight:800; color:#166534; margin-bottom:10px; }
+    .success-state p { font-size:15px; color:#64748b; max-width:420px; margin:0 auto; }
+
+    /* EXPIRED STATE */
+    .expired-state { text-align:center; padding:56px 20px; }
+    .expired-icon { font-size:72px; margin-bottom:20px; }
+    .expired-state h2 { font-size:22px; font-weight:700; color:#b91c1c; margin-bottom:10px; }
+    .expired-state p { font-size:15px; color:#64748b; }
+
+    /* NOTICE */
+    .notice {
+      background:#fffbeb; border:1px solid #fde68a; border-radius:8px;
+      padding:12px 16px; font-size:13px; color:#92400e; margin-bottom:20px;
+    }
+
+    @media(max-width:520px) {
+      .firma-info { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Grupo Helse SAS</h1>
+  <p>Firma digital de documentos</p>
+</header>
+
+<main>
+
+  <!-- LOADING -->
+  <div class="state active" id="stateLoading">
+    <div class="card" style="text-align:center;padding:48px">
+      <div style="font-size:32px;margin-bottom:12px">⏳</div>
+      <p style="color:#64748b">Cargando documento…</p>
+    </div>
+  </div>
+
+  <!-- EXPIRED / NO VÁLIDO -->
+  <div class="state" id="stateExpired">
+    <div class="card">
+      <div class="expired-state">
+        <div class="expired-icon">🚫</div>
+        <h2>Este link ya no está disponible</h2>
+        <p id="expiredMsg">El documento fue firmado o el link fue revocado. Si crees que esto es un error, contacta a Grupo Helse SAS.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTO + FIRMA -->
+  <div class="state" id="stateFirmar">
+    <div class="notice">
+      ⚠️ Este link es de <strong>un solo uso</strong>. Una vez que firmes, quedará inhabilitado automáticamente.
+    </div>
+
+    <!-- DOCUMENTO -->
+    <div class="card">
+      <div class="card-title">📄 Documento a firmar</div>
+      <div class="doc-body" id="docBody">Cargando…</div>
+    </div>
+
+    <!-- FIRMA -->
+    <div class="card">
+      <div class="card-title">✍️ Tu firma</div>
+
+      <div class="alert" id="firmaAlert"></div>
+
+      <div class="firma-info">
+        <div>
+          <label class="fl">Tipo de documento de identidad *</label>
+          <select class="fi" id="tipoDoc">
+            <option value="">Selecciona…</option>
+            <option value="CC">Cédula de ciudadanía (CC)</option>
+            <option value="CE">Cédula de extranjería (CE)</option>
+            <option value="PA">Pasaporte (PA)</option>
+            <option value="NIT">NIT</option>
+            <option value="TI">Tarjeta de identidad (TI)</option>
+          </select>
+        </div>
+        <div>
+          <label class="fl">Número de documento *</label>
+          <input class="fi" id="numDoc" placeholder="Ej: 1030512345"/>
+        </div>
+      </div>
+
+      <label class="fl" style="margin-bottom:8px">Firma en el recuadro *</label>
+      <div class="canvas-wrap">
+        <canvas id="firmaCanvas" width="700" height="180"></canvas>
+      </div>
+      <p class="canvas-label">Dibuja tu firma con el dedo o el mouse</p>
+      <button class="btn-clear" onclick="clearCanvas()">🗑 Borrar firma</button>
+
+      <button class="btn-primary" id="btnFirmar" onclick="submitFirma()">
+        ✅ Firmar documento
+      </button>
+    </div>
+  </div>
+
+  <!-- ÉXITO -->
+  <div class="state" id="stateSuccess">
+    <div class="card">
+      <div class="success-state">
+        <div class="success-icon">✅</div>
+        <h2>Documento firmado con éxito</h2>
+        <p>Gracias, <strong id="successNombre"></strong>. Tu firma ha sido registrada y el documento queda guardado en el sistema de Grupo Helse SAS.<br><br>Puedes cerrar esta página.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+// ===== TOKEN =====
+const params = new URLSearchParams(window.location.search);
+const token  = params.get('t');
+
+let docData = null;
+let hasSigned = false;
+
+// ===== CANVAS =====
+const canvas = document.getElementById('firmaCanvas');
+const ctx    = canvas.getContext('2d');
+let drawing  = false;
+let lastX = 0, lastY = 0;
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width  / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left) * scaleX,
+    y: (src.clientY - rect.top)  * scaleY
+  };
+}
+canvas.addEventListener('mousedown',  e => { drawing=true; const p=getPos(e); lastX=p.x; lastY=p.y; });
+canvas.addEventListener('mousemove',  e => { if(!drawing) return; draw(e); });
+canvas.addEventListener('mouseup',    () => { drawing=false; ctx.beginPath(); markSigned(); });
+canvas.addEventListener('mouseleave', () => { drawing=false; ctx.beginPath(); });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing=true; const p=getPos(e); lastX=p.x; lastY=p.y; }, {passive:false});
+canvas.addEventListener('touchmove',  e => { e.preventDefault(); if(!drawing) return; draw(e); }, {passive:false});
+canvas.addEventListener('touchend',   e => { e.preventDefault(); drawing=false; ctx.beginPath(); markSigned(); });
+
+function draw(e) {
+  const p = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(p.x, p.y);
+  ctx.strokeStyle = '#0a2540';
+  ctx.lineWidth   = 2.5;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+  ctx.stroke();
+  lastX = p.x; lastY = p.y;
+}
+function markSigned() {
+  const px = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  hasSigned = px.some((_,i) => i%4===3 && px[i]>0);
+  canvas.classList.toggle('signed', hasSigned);
+}
+function clearCanvas() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  hasSigned = false;
+  canvas.classList.remove('signed');
+}
+
+// ===== LOAD DOCUMENT =====
+async function loadDoc() {
+  if (!token) { showState('expired'); document.getElementById('expiredMsg').textContent = 'Link inválido.'; return; }
+  try {
+    const snap = await db.collection('documentos').doc(token).get();
+    if (!snap.exists) { showState('expired'); document.getElementById('expiredMsg').textContent = 'Este link no existe.'; return; }
+    docData = snap.data();
+    if (docData.estado !== 'pendiente') {
+      showState('expired');
+      document.getElementById('expiredMsg').textContent =
+        docData.estado === 'firmado'
+          ? 'Este documento ya fue firmado anteriormente. El link está desactivado.'
+          : 'Este link fue revocado por Grupo Helse SAS.';
+      return;
+    }
+    // Renderizar documento
+    document.getElementById('docBody').innerHTML = buildDocHTML(docData);
+    showState('firmar');
+  } catch(e) {
+    showState('expired');
+    document.getElementById('expiredMsg').textContent = 'Error cargando el documento: ' + e.message;
+  }
+}
+
+// ===== SUBMIT FIRMA =====
+async function submitFirma() {
+  const tipoDoc = document.getElementById('tipoDoc').value;
+  const numDoc  = document.getElementById('numDoc').value.trim();
+
+  if (!tipoDoc || !numDoc) { showFirmaAlert('Ingresa tu tipo y número de documento.'); return; }
+  if (!hasSigned)          { showFirmaAlert('Dibuja tu firma en el recuadro antes de continuar.'); return; }
+
+  const btn = document.getElementById('btnFirmar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Guardando firma…';
+
+  try {
+    // Verificar de nuevo que sigue pendiente (race condition)
+    const snap = await db.collection('documentos').doc(token).get();
+    if (snap.data().estado !== 'pendiente') {
+      showFirmaAlert('Este link ya fue usado. Recarga la página.');
+      btn.disabled = false; btn.textContent = '✅ Firmar documento';
+      return;
+    }
+
+    const firmaImg = canvas.toDataURL('image/png');
+
+    await db.collection('documentos').doc(token).update({
+      estado:   'firmado',
+      firmadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+      firmaImg,
+      firmante: { tipoDoc, numDoc }
+    });
+
+    document.getElementById('successNombre').textContent = docData.nombre || 'usuario';
+    showState('success');
+
+  } catch(e) {
+    showFirmaAlert('Error al guardar la firma: ' + e.message);
+    btn.disabled = false;
+    btn.innerHTML = '✅ Firmar documento';
+  }
+}
+
+// ===== BUILD DOC HTML ===== (igual que en dashboard)
+function buildDocHTML(d) {
+  const fmt = n => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0}).format(n||0);
+  if (d.tipoKey === 'contrato') {
+    return `<h2>Contrato Individual de Trabajo por Duración de Obra o Labor Contratada</h2>
+<p>Entre los suscritos: por una parte, <span class="field-val">YORMAN JAVIER MONROY TRUJILLO</span>, representante legal de <span class="field-val">GRUPO HELSE SAS</span> (NIT 901401880), domiciliada en Bogotá, quien actúa como <strong>EL EMPLEADOR</strong>; y por otra, <span class="field-val">${d.nombre}</span>, identificado(a) con cédula <span class="field-val">${d.cedula}</span>, domiciliado(a) en <span class="field-val">${d.ciudad}</span>, quien actúa como <strong>EL TRABAJADOR</strong>.</p>
+<p><strong>ARTÍCULO PRIMERO. OBJETO:</strong> El TRABAJADOR desempeñará el cargo de <span class="field-val">${d.cargo}</span> para la ejecución de la siguiente obra o labor: <span class="field-val">${d.actividad}</span>.</p>
+<p><strong>ARTÍCULO SEGUNDO. REMUNERACIÓN:</strong> Salario mensual de <span class="field-val">${fmt(d.salario)}</span>, pagado quincenalmente.</p>
+<p><strong>ARTÍCULO TERCERO. JORNADA:</strong> Ocho (8) horas diarias y cuarenta y cuatro (44) horas semanales (Ley 2101 de 2021).</p>
+<p><strong>ARTÍCULO CUARTO. DURACIÓN:</strong> Por la duración de la obra o labor descrita en el artículo primero.</p>
+<p><em>Las cláusulas restantes (artículos 5 al 12) aplican en su integridad conforme al modelo estándar de Grupo Helse SAS.</em></p>
+<p style="margin-top:18px">Firmado en <span class="field-val">${d.ciudadFirma||'Bogotá'}</span>, el <span class="field-val">${d.fecha}</span>.</p>`;
+  }
+  if (d.tipoKey === 'cuenta_ret') {
+    return `<h2>Cuenta de Cobro con Retenciones</h2>
+<p><span class="field-val">${d.ciudad||'Bogotá'}, ${d.fecha}</span></p>
+<p style="margin-top:10px"><strong>GRUPO HELSE SAS</strong> — NIT 901.401.880-4</p>
+<p style="margin-top:10px"><strong>Debe a:</strong> <span class="field-val">${d.nombre}</span> — C.C. <span class="field-val">${d.cedula}</span></p>
+<p><strong>La suma de:</strong> <span class="field-val">${fmt(d.valor)}</span></p>
+<p><strong>Por concepto de:</strong> <span class="field-val">${d.concepto}</span></p>
+<table class="doc-table">
+  <tr><td>Valor del servicio</td><td style="text-align:right">${fmt(d.valor)}</td></tr>
+  <tr><td>Retención en la fuente (${d.ret}%)</td><td style="text-align:right">− ${fmt(d.descRet)}</td></tr>
+  <tr><td>ReteICA (${d.ica}%)</td><td style="text-align:right">− ${fmt(d.descIca)}</td></tr>
+  <tr class="total-row"><td>TOTAL A PAGAR</td><td style="text-align:right">${fmt(d.total)}</td></tr>
+</table>
+<p style="margin-top:14px">Cordialmente, <strong>${d.nombre}</strong> — C.C. ${d.cedula}</p>`;
+  }
+  if (d.tipoKey === 'cuenta_sin') {
+    return `<h2>Cuenta de Cobro</h2>
+<p><span class="field-val">${d.ciudad||'Bogotá'}, ${d.fecha}</span></p>
+<p style="margin-top:10px"><strong>GRUPO HELSE SAS</strong> — NIT 901.401.880-4</p>
+<p style="margin-top:10px"><strong>Debe a:</strong> <span class="field-val">${d.nombre}</span> — C.C. <span class="field-val">${d.cedula}</span></p>
+<p><strong>La suma de:</strong> <span class="field-val">${fmt(d.total)}</span></p>
+<p><strong>Por concepto de:</strong> <span class="field-val">${d.concepto}</span></p>
+<table class="doc-table">
+  <tr><td>${d.concepto}</td><td style="text-align:right">${fmt(d.total)}</td></tr>
+  <tr class="total-row"><td>TOTAL A PAGAR</td><td style="text-align:right">${fmt(d.total)}</td></tr>
+</table>
+<p style="margin-top:14px">Cordialmente, <strong>${d.nombre}</strong> — C.C. ${d.cedula}</p>`;
+  }
+  return '<p>Tipo de documento no reconocido.</p>';
+}
+
+// ===== HELPERS =====
+function showState(name) {
+  document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+  document.getElementById('state'+name.charAt(0).toUpperCase()+name.slice(1)).classList.add('active');
+}
+function showFirmaAlert(msg) {
+  const el = document.getElementById('firmaAlert');
+  el.className = 'alert error';
+  el.textContent = msg;
+}
+
+// ===== INIT =====
+loadDoc();
+</script>
+</body>
+</html>
