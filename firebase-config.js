@@ -21,5 +21,4 @@ const EMAILJS_CONFIG = {
 };
 
 // URL base donde está desplegado el proyecto en GitHub Pages
-// ej: "https://helseador.github.io/helse-docs"
-const BASE_URL = "https://helseador.github.io/helse-docs";
+const BASE_URL = "https://helseador.github.io/Helse-Helteks-Documentos";
