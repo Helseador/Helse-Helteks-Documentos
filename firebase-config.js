@@ -1,24 +1,23 @@
 // ============================================================
 //  Documentos Helse & Helteks - Configuración Firebase
-//  Reemplaza estos valores con los de tu proyecto Firebase
 //  By TesJua
 // ============================================================
 
 const FIREBASE_CONFIG = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROJECT.firebaseapp.com",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_PROJECT.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyBbDvZPGKpFIrrFltmOb4Jj1iYMTgiaCew",
+  authDomain: "helse-helteks-docs.firebaseapp.com",
+  projectId: "helse-helteks-docs",
+  storageBucket: "helse-helteks-docs.firebasestorage.app",
+  messagingSenderId: "291505144138",
+  appId: "1:291505144138:web:f8f81a03328930483541b3"
 };
 
-// EmailJS - Crea cuenta gratis en https://www.emailjs.com/
+// EmailJS
 const EMAILJS_CONFIG = {
-  serviceId: "TU_SERVICE_ID",       // ej: service_abc123
-  templateId: "TU_TEMPLATE_ID",     // ej: template_xyz789
-  publicKey: "TU_PUBLIC_KEY"        // ej: user_XXXXXXXXXXXX
+  serviceId: "service_gyp4nal",
+  templateId: "template_zaso31b",
+  publicKey: "vk4IweeouLtTYG1IL"
 };
 
-// URL base donde está desplegado el proyecto en GitHub Pages
+// URL base GitHub Pages
 const BASE_URL = "https://helseador.github.io/Helse-Helteks-Documentos";
