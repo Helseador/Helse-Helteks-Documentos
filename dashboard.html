@@ -200,6 +200,7 @@
   <div class="tabs">
     <button class="tab active" onclick="switchTab('nuevo',this)">➕ Nuevo documento</button>
     <button class="tab" onclick="switchTab('historial',this)">📋 Historial</button>
+    <button class="tab" id="tabUsuarios" style="display:none" onclick="switchTab('usuarios',this)">👥 Usuarios</button>
   </div>
 
   <!-- ========== TAB: NUEVO ========== -->
@@ -374,6 +375,39 @@
   </div>
 </main>
 
+<!-- ========== TAB: USUARIOS (solo superadmin) ========== -->
+  <div class="section" id="tab-usuarios">
+    <div class="card">
+      <div class="card-title">👥 Gestión de usuarios</div>
+
+      <!-- Crear usuario -->
+      <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:24px;">
+        <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:14px;">➕ Crear nuevo usuario</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="fl">Nombre completo *</label>
+            <input class="fi" id="u_nombre" placeholder="Ej: Laura Martínez"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Correo electrónico *</label>
+            <input class="fi" id="u_email" type="email" placeholder="usuario@helse.com.co"/>
+          </div>
+          <div class="form-group">
+            <label class="fl">Contraseña temporal *</label>
+            <input class="fi" id="u_pass" type="password" placeholder="Mínimo 6 caracteres"/>
+          </div>
+        </div>
+        <div class="alert" id="userAlert" style="margin-top:12px;"></div>
+        <button class="btn-primary" style="margin-top:12px;width:auto;padding:10px 24px;" onclick="crearUsuario()">Crear usuario</button>
+      </div>
+
+      <!-- Lista de usuarios -->
+      <div id="listaUsuarios">
+        <div class="empty"><div class="icon">⏳</div><p>Cargando usuarios…</p></div>
+      </div>
+    </div>
+  </div>
+
 <!-- MODAL PREVIEW -->
 <div class="modal-overlay" id="previewModal">
   <div class="modal">
@@ -405,11 +439,25 @@ emailjs.init(EMAILJS_CONFIG.publicKey);
 
 let currentUser = null;
 let selectedDocType = null;
+const SUPERADMIN_EMAIL = 'dtecnicaydesarrollo@helse.com.co';
+const isSuperAdmin = () => currentUser?.email === SUPERADMIN_EMAIL;
 
-auth.onAuthStateChanged(u => {
+auth.onAuthStateChanged(async u => {
   if (!u) { window.location.href = 'index.html'; return; }
+  // Si no es superadmin, verificar que está activo en Firestore
+  if (u.email !== SUPERADMIN_EMAIL) {
+    const snap = await db.collection('usuarios').where('email','==',u.email).limit(1).get();
+    if (snap.empty || snap.docs[0].data().activo === false) {
+      await auth.signOut();
+      window.location.href = 'index.html';
+      return;
+    }
+  }
   currentUser = u;
   document.getElementById('navUser').textContent = u.email;
+  if (u.email === SUPERADMIN_EMAIL) {
+    document.getElementById('tabUsuarios').style.display = 'inline-block';
+  }
   loadHistorial();
 });
 
@@ -420,6 +468,120 @@ function switchTab(name, btn) {
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
   if (name === 'historial') loadHistorial();
+  if (name === 'usuarios') loadUsuarios();
+}
+
+// ===== GESTIÓN DE USUARIOS (solo superadmin) =====
+async function crearUsuario() {
+  if (!isSuperAdmin()) return;
+  const nombre  = document.getElementById('u_nombre').value.trim();
+  const email   = document.getElementById('u_email').value.trim();
+  const pass    = document.getElementById('u_pass').value;
+
+  if (!nombre || !email || !pass) { showUserAlert('Completa todos los campos.','error'); return; }
+  if (pass.length < 6) { showUserAlert('La contraseña debe tener mínimo 6 caracteres.','error'); return; }
+
+  const btn = document.querySelector('#tab-usuarios .btn-primary');
+  btn.disabled = true; btn.textContent = 'Creando…';
+
+  try {
+    // Crear en Firebase Auth usando la API REST (desde el browser sin perder sesión actual)
+    const idToken = await currentUser.getIdToken();
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_CONFIG.apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass, returnSecureToken: false })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const uid = data.localId;
+
+    // Guardar perfil en Firestore
+    await db.collection('usuarios').doc(uid).set({
+      nombre, email, uid,
+      role: 'admin',
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+      creadoPor: currentUser.email,
+      activo: true,
+    });
+
+    showUserAlert('✅ Usuario ' + email + ' creado correctamente.', 'success');
+    document.getElementById('u_nombre').value = '';
+    document.getElementById('u_email').value = '';
+    document.getElementById('u_pass').value = '';
+    loadUsuarios();
+  } catch(e) {
+    const msg = e.message.includes('EMAIL_EXISTS') ? 'Ese correo ya está registrado.'
+               : e.message.includes('WEAK_PASSWORD') ? 'Contraseña muy débil.'
+               : 'Error: ' + e.message;
+    showUserAlert(msg, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Crear usuario';
+  }
+}
+
+async function loadUsuarios() {
+  if (!isSuperAdmin()) return;
+  const el = document.getElementById('listaUsuarios');
+  el.innerHTML = '<div class="empty"><div class="icon">⏳</div><p>Cargando…</p></div>';
+  try {
+    const snap = await db.collection('usuarios').orderBy('creadoEn','desc').get();
+    if (snap.empty) {
+      el.innerHTML = '<div class="empty"><div class="icon">👤</div><p>No hay usuarios creados todavía.</p></div>';
+      return;
+    }
+    let rows = '';
+    snap.forEach(doc => {
+      const u = doc.data();
+      const badge = u.activo !== false
+        ? '<span class="badge badge-signed">Activo</span>'
+        : '<span class="badge badge-expired">Inactivo</span>';
+      const fecha = u.creadoEn?.toDate().toLocaleDateString('es-CO') || '-';
+      rows += `<tr>
+        <td><strong>${u.nombre||'-'}</strong></td>
+        <td>${u.email}</td>
+        <td>${badge}</td>
+        <td>${fecha}</td>
+        <td>
+          ${u.activo !== false
+            ? `<button class="btn-danger" onclick="toggleUsuario('${doc.id}', false)">Desactivar</button>`
+            : `<button class="btn-green" onclick="toggleUsuario('${doc.id}', true)">Activar</button>`}
+          <button class="btn-secondary" style="margin-left:4px;padding:6px 12px;font-size:12px" onclick="resetPass('${u.email}')">🔑 Reset pass</button>
+        </td>
+      </tr>`;
+    });
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Creado</th><th>Acciones</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="alert error" style="display:flex">Error: ${e.message}</div>`;
+  }
+}
+
+async function toggleUsuario(uid, activo) {
+  if (!isSuperAdmin()) return;
+  await db.collection('usuarios').doc(uid).update({ activo });
+  loadUsuarios();
+}
+
+async function resetPass(email) {
+  if (!isSuperAdmin()) return;
+  try {
+    await auth.sendPasswordResetEmail(email);
+    alert('✅ Correo de restablecimiento enviado a ' + email);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function showUserAlert(msg, type) {
+  const el = document.getElementById('userAlert');
+  el.className = 'alert ' + type;
+  el.textContent = msg;
+  el.style.display = 'flex';
+  setTimeout(() => el.style.display = 'none', 5000);
 }
 
 // ===== DOC TYPE SELECTION =====
