@@ -901,34 +901,34 @@ async function descargarWord(id) {
   for (let i=0; i<binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
 
   const zip = await JSZip.loadAsync(bytes);
+
+  // Leer el XML del document.xml
   let xml = await zip.file('word/document.xml').async('string');
 
-  // Reemplazar los MERGEFIELDS (formato: «campo») con los valores reales
-  xml = xml.replace(/«nombres»/g, d.nombre||'');
-  xml = xml.replace(/«cedula»/g, d.cedula||'');
-  xml = xml.replace(/«ciudad»/g, d.ciudad||'');
+  // Reemplazar campos de combinación (valor display entre comillas angulares)
+  xml = xml.split('\u00abnombres\u00bb').join(d.nombre||'');
+  xml = xml.split('\u00abcedula\u00bb').join(d.cedula||'');
+  xml = xml.split('\u00abciudad\u00bb').join(d.ciudad||'');
 
   // Reemplazar placeholders de texto plano
-  xml = xml.replace(/\(CARGO\)/g, d.cargo||'');
-  xml = xml.replace(/\(ACTIVIDAD\)/g, d.actividad||'');
-  xml = xml.replace(/\$ 1\.423\.500/g, fmt(d.salario));
+  xml = xml.split('(CARGO)').join(d.cargo||'');
+  xml = xml.split('(ACTIVIDAD)').join(d.actividad||'');
+  xml = xml.split('$ 1.423.500').join(fmt(d.salario));
 
-  // Reemplazar "En constancia, se firma en dos ejemplares..."
-  xml = xml.replace(
-    'En constancia, se firma en dos ejemplares del mismo tenor.',
-    `En constancia, se firma en ${d.ciudadFirma||'Bogotá'} el ${d.fecha||''}, en dos ejemplares del mismo tenor.`
+  // Reemplazar cierre del contrato
+  xml = xml.split('En constancia, se firma en dos ejemplares del mismo tenor.').join(
+    'En constancia, se firma en ' + (d.ciudadFirma||'Bogotá') + ' el ' + (d.fecha||'') + ', en dos ejemplares del mismo tenor.'
   );
 
+  // Actualizar el archivo en el ZIP (eliminar el original y agregar el nuevo)
+  zip.remove('word/document.xml');
   zip.file('word/document.xml', xml);
 
-  // Agregar imagen de firma del trabajador si existe
-  if (d.firmaImg) {
-    const firmaBase64 = d.firmaImg.split(',')[1];
-    const firmaBytes = Uint8Array.from(atob(firmaBase64), c=>c.charCodeAt(0));
-    zip.file('word/media/firma_trabajador.png', firmaBytes);
-  }
-
-  const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    compression: 'DEFLATE'
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
