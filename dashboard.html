@@ -819,40 +819,52 @@ async function descargarPDF(id) {
     article('ARTICULO DECIMOPRIMERO. ACOSO LABORAL:', 'El EMPLEADOR garantiza la existencia de un Comité de Convivencia Laboral y de canales de denuncia confidenciales, para prevenir, investigar y sancionar actos de acoso o maltrato. Se brindará acompañamiento psicológico y orientación jurídica, conforme a la Ley 1010 de 2006 y la Ley 2460 de 2025.');
     article('ARTICULO DECIMOSEGUNDO. INTEGRIDAD CONTRACTUAL:', 'Este contrato sustituye cualquier acuerdo previo, verbal o escrito, entre las partes. Cualquier modificación deberá constar por escrito y estar debidamente firmada por ambas partes.');
 
-    y+=5; chk(60);
+    y+=5; chk(20);
     para('En constancia, se firma en '+(d.ciudadFirma||'Bogotá')+' el '+(d.fecha||'')+', en dos ejemplares del mismo tenor.');
-    y+=10; chk(60);
 
-    // FIRMAS: Yorman izquierda, Trabajador derecha
+    // ── FIRMAS AL PIE ─────────────────────────────────────────────────
+    // Las firmas van fijas en la última página, justo encima del pie del membrete.
+    // El pie del membrete empieza aprox a 267mm. 
+    // Ponemos las firmas a partir de 230mm desde arriba.
+    const lastPage = pageNum;
     const col2 = ML + LW/2;
-    const firmaY = y;
 
-    // Firma Yorman (empleador)
+    // Posición fija desde el fondo de la última página
+    const firmaY = 222;   // encima de la línea azul del pie
+    const nombreY = firmaY + 24;
+    const rolY = nombreY + lineH;
+    const nitY = rolY + lineH;
+    const notaY = 262;    // justo arriba de la línea separadora del pie
+
+    // Firma Yorman — izquierda
     pdf.addImage('data:image/png;base64,'+firmaYormanB64, 'PNG', ML, firmaY, 60, 20);
 
-    // Firma del trabajador
+    // Firma trabajador — derecha
     if (d.firmaImg) {
       pdf.addImage(d.firmaImg, 'PNG', col2, firmaY, 65, 22);
     }
 
-    y = firmaY + 24;
-
+    // Nombres en bold
     sf('bold', 9.5, 0,0,0);
-    pdf.text('YORMAN JAVIER MONROY TRUJILLO', ML, y);
-    pdf.text(d.nombre||'', col2, y); y+=lineH;
-    sf('normal', 8.5, 80,80,80);
-    pdf.text('EL EMPLEADOR', ML, y);
-    pdf.text('EL TRABAJADOR', col2, y); y+=lineH;
-    pdf.text('Grupo Helse SAS  —  NIT 901.401.880-4', ML, y);
-    if (d.firmante) pdf.text((d.firmante.tipoDoc||'')+' No. '+(d.firmante.numDoc||''), col2, y);
-    y+=lineH*2;
+    pdf.text('YORMAN JAVIER MONROY TRUJILLO', ML, nombreY);
+    pdf.text(d.nombre||'', col2, nombreY);
 
+    // Roles
+    sf('normal', 8.5, 60,60,60);
+    pdf.text('EL EMPLEADOR', ML, rolY);
+    pdf.text('EL TRABAJADOR', col2, rolY);
+
+    // NIT / documento
+    pdf.text('Grupo Helse SAS  —  NIT 901.401.880-4', ML, nitY);
+    if (d.firmante) pdf.text((d.firmante.tipoDoc||'')+' No. '+(d.firmante.numDoc||''), col2, nitY);
+
+    // Línea separadora y nota de firma digital
     pdf.setDrawColor(180,180,180); pdf.setLineWidth(0.3);
-    pdf.line(ML, y, MR, y); y+=5;
+    pdf.line(ML, notaY, MR, notaY);
 
-    sf('normal', 7.5, 120,120,120);
+    sf('normal', 7.5, 130,130,130);
     if (d.firmadoEn) {
-      pdf.text('Firmado digitalmente el '+d.firmadoEn.toDate().toLocaleString('es-CO')+'. Firma electrónica con validez jurídica — Ley 527/1999.', ML, y);
+      pdf.text('Firmado digitalmente el '+d.firmadoEn.toDate().toLocaleString('es-CO')+'. Firma electrónica con validez jurídica — Ley 527/1999.', ML, notaY+4);
     }
 
   } else {
