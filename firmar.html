@@ -190,8 +190,14 @@
       <p class="canvas-label">Dibuja tu firma con el dedo o el mouse</p>
       <button class="btn-clear" onclick="clearCanvas()">🗑 Borrar firma</button>
 
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:14px 16px;margin:16px 0;font-size:12.5px;color:#0c4a6e;line-height:1.6;">
+        <p style="font-weight:700;margin-bottom:6px">📋 Política de Tratamiento de Datos Personales</p>
+        <p>De conformidad con la Ley 1581 de 2012 y el Decreto 1377 de 2013, <strong>Grupo Helse SAS</strong> (NIT 901.401.880-4) informa que los datos personales suministrados en este contrato serán tratados con la finalidad de gestionar la relación laboral, cumplir obligaciones legales y administrativas, y realizar comunicaciones relacionadas con el objeto contractual. Sus datos serán almacenados de forma segura y no serán cedidos a terceros sin su consentimiento, salvo obligación legal. Usted tiene derecho a conocer, actualizar, rectificar y suprimir sus datos, así como a revocar la autorización otorgada. Para ejercer estos derechos puede contactarnos en <strong>dtecnicaydesarrollohelse@gmail.com</strong>.</p>
+        <p style="margin-top:8px;font-weight:600;color:#0a2540">⚠️ Al firmar este documento, usted autoriza expresamente a Grupo Helse SAS el tratamiento de sus datos personales conforme a la política descrita anteriormente.</p>
+      </div>
+
       <button class="btn-primary" id="btnFirmar" onclick="submitFirma()">
-        ✅ Firmar documento
+        ✅ Firmar y aceptar política de datos
       </button>
     </div>
   </div>
@@ -340,14 +346,40 @@ async function submitFirma() {
 function buildDocHTML(d) {
   const fmt = n => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0}).format(n||0);
   if (d.tipoKey === 'contrato') {
-    return `<h2>Contrato Individual de Trabajo por Duración de Obra o Labor Contratada</h2>
-<p>Entre los suscritos: por una parte, <span class="field-val">YORMAN JAVIER MONROY TRUJILLO</span>, representante legal de <span class="field-val">GRUPO HELSE SAS</span> (NIT 901401880), domiciliada en Bogotá, quien actúa como <strong>EL EMPLEADOR</strong>; y por otra, <span class="field-val">${d.nombre}</span>, identificado(a) con cédula <span class="field-val">${d.cedula}</span>, domiciliado(a) en <span class="field-val">${d.ciudad}</span>, quien actúa como <strong>EL TRABAJADOR</strong>.</p>
-<p><strong>ARTÍCULO PRIMERO. OBJETO:</strong> El TRABAJADOR desempeñará el cargo de <span class="field-val">${d.cargo}</span> para la ejecución de la siguiente obra o labor: <span class="field-val">${d.actividad}</span>.</p>
-<p><strong>ARTÍCULO SEGUNDO. REMUNERACIÓN:</strong> Salario mensual de <span class="field-val">${fmt(d.salario)}</span>, pagado quincenalmente.</p>
-<p><strong>ARTÍCULO TERCERO. JORNADA:</strong> Ocho (8) horas diarias y cuarenta y cuatro (44) horas semanales (Ley 2101 de 2021).</p>
-<p><strong>ARTÍCULO CUARTO. DURACIÓN:</strong> Por la duración de la obra o labor descrita en el artículo primero.</p>
-<p><em>Las cláusulas restantes (artículos 5 al 12) aplican en su integridad conforme al modelo estándar de Grupo Helse SAS.</em></p>
-<p style="margin-top:18px">Firmado en <span class="field-val">${d.ciudadFirma||'Bogotá'}</span>, el <span class="field-val">${d.fecha}</span>.</p>`;
+    return `<h2>CONTRATO INDIVIDUAL DE TRABAJO POR DURACIÓN DE OBRA O LABOR CONTRATADA</h2>
+<p>Entre los suscritos, a saber: por una parte, <span class="field-val">YORMAN JAVIER MONROY TRUJILLO</span>, en calidad de representante legal de la sociedad denominada <span class="field-val">GRUPO HELSE SAS</span>, identificada con NIT 901401880, con domicilio en BOGOTA, quien en adelante se denominará <strong>EL EMPLEADOR</strong>; y por otra, el(la) señor(a) <span class="field-val">${d.nombre}</span>, identificado(a) con la cédula de ciudadanía No. <span class="field-val">${d.cedula}</span>, con domicilio en <span class="field-val">${d.ciudad}</span>, quien para los mismos efectos se denominará <strong>EL TRABAJADOR</strong>, se ha convenido celebrar el presente CONTRATO INDIVIDUAL DE TRABAJO POR DURACIÓN DE OBRA O LABOR, conforme al artículo 45 del Código Sustantivo del Trabajo y demás normas complementarias, y bajo las siguientes cláusulas:</p>
+
+<p><strong>ARTICULO PRIMERO. OBJETO:</strong> El EMPLEADOR contrata los servicios personales del TRABAJADOR para desempeñar el cargo de <span class="field-val">${d.cargo}</span>, destinado a la ejecución de la obra o labor específica denominada <span class="field-val">${d.actividad}</span>, de naturaleza temporal, cuyo alcance ha sido previamente definido por el EMPLEADOR.</p>
+<p>El TRABAJADOR se compromete a ejecutar sus labores con diligencia, eficiencia y responsabilidad, bajo la dirección, control y subordinación del EMPLEADOR, observando los reglamentos internos de trabajo, las políticas corporativas y las disposiciones legales vigentes.</p>
+<p>Durante la vigencia del presente contrato, el TRABAJADOR prestará sus servicios de manera exclusiva al EMPLEADOR, salvo autorización expresa por escrito que le permita desempeñar otras actividades sin afectar el cumplimiento de sus obligaciones.</p>
+
+<p><strong>ARTICULO SEGUNDO. REMUNERACIÓN:</strong> EL EMPLEADOR pagará al TRABAJADOR un salario mensual de <span class="field-val">${fmt(d.salario)}</span>, el cual será cancelado en períodos quincenales, el cual incluye el pago del descanso dominical ordinario y demás derechos salariales establecidos en la ley.</p>
+<p><strong>PARÁGRAFO PRIMERO.</strong> Todo trabajo suplementario, nocturno, dominical o festivo será remunerado conforme a los artículos 159, 168 y concordantes del Código Sustantivo del Trabajo.</p>
+<p><strong>PARÁGRAFO SEGUNDO.</strong> Los beneficios, bonificaciones o auxilios otorgados voluntariamente por el EMPLEADOR y que no retribuyan directamente el servicio, no constituirán salario, de conformidad con el artículo 128 del CST.</p>
+
+<p><strong>ARTICULO TERCERO. JORNADA LABORAL:</strong> La jornada laboral será de ocho (8) horas diarias y cuarenta y cuatro (44) horas semanales, conforme a la Ley 2101 de 2021, sin perjuicio de la flexibilidad horaria o turnos especiales que requiera la naturaleza del servicio.</p>
+<p>El EMPLEADOR podrá establecer horarios escalonados o sistemas de turnos, respetando los límites legales y garantizando el derecho a la desconexión laboral en los términos de la Ley 2191 de 2022.</p>
+
+<p><strong>ARTICULO CUARTO. DURACIÓN DEL CONTRATO:</strong> El presente contrato se celebra por la duración de la obra o labor descrita en la cláusula primera, y terminará una vez concluya dicha actividad específica.</p>
+
+<p><strong>ARTICULO QUINTO. TERMINACIÓN CON JUSTA CAUSA:</strong> El contrato podrá ser terminado anticipadamente por cualquiera de las partes por las justas causas previstas en el artículo 62 del CST y el artículo 7 del Decreto 2351 de 1965, por la culminación efectiva de la obra o labor contratada.</p>
+<p>Adicionalmente, serán faltas disciplinarias: la presencia del trabajador en estado de embriaguez o bajo efectos de sustancias psicoactivas; la revelación no autorizada de información confidencial o estratégica; el maltrato reiterado o conducta irrespetuosa hacia compañeros, usuarios o superiores, debidamente verificada; el abandono del lugar de trabajo sin causa justificada; la no asistencia reiterada o la impuntualidad injustificada, previa valoración objetiva y oportunidad de descargos; la negativa injustificada a ejecutar tareas asignadas por el EMPLEADOR o el usuario, salvo que impliquen desmejoras laborales o vulneren derechos. En todos los casos se garantizará el derecho al debido proceso, conforme al artículo 29 de la Constitución Política.</p>
+
+<p><strong>ARTICULO SEXTO. MODIFICACIONES:</strong> El EMPLEADOR podrá realizar ajustes razonables en el lugar de prestación del servicio o funciones, siempre que no impliquen desmejoras sustanciales. Cualquier traslado que implique gasto adicional deberá ser asumido por el EMPLEADOR. El TRABAJADOR podrá manifestar por escrito su oposición cuando el cambio afecte sus condiciones laborales o personales esenciales.</p>
+
+<p><strong>ARTICULO SEPTIMO. SEGURIDAD SOCIAL:</strong> EL EMPLEADOR afilia al TRABAJADOR al Sistema de Seguridad Social Integral (salud, pensión y riesgos laborales), y realiza los aportes correspondientes, conforme a la Ley 100 de 1993 y demás normas vigentes.</p>
+
+<p><strong>ARTICULO OCTAVO. PRESTACIONES SOCIALES:</strong> EL TRABAJADOR tiene derecho al reconocimiento de vacaciones, cesantías, intereses sobre cesantías y prima de servicios conforme a lo previsto en la legislación laboral colombiana, incluso en contratos por duración de obra o labor.</p>
+
+<p><strong>ARTICULO NOVENO. OBLIGACIONES DEL TRABAJADOR:</strong> El TRABAJADOR se compromete a: cumplir con diligencia las órdenes e instrucciones del EMPLEADOR; guardar la debida confidencialidad sobre los asuntos técnicos, comerciales o estratégicos de la empresa; observar las normas de seguridad, salud en el trabajo y convivencia laboral; no incurrir en conductas de acoso, discriminación, hostigamiento o violencia; utilizar adecuadamente los bienes, equipos, uniformes o herramientas asignadas; participar en las actividades de capacitación o bienestar programadas por la empresa; no divulgar ni hacer uso indebido de la información reservada, comercial, técnica o estratégica del EMPLEADOR durante la vigencia del contrato y hasta por un período máximo de dos (2) años posteriores a su terminación. Esta obligación no restringe su derecho al trabajo ni aplica a información de carácter público.</p>
+
+<p><strong>ARTICULO DECIMO. CREDITO POR LIBANZA:</strong> Los descuentos voluntarios deberán ser razonables y equitativos, sin exceder en ningún caso el treinta por ciento (30%) del salario mensual del trabajador. La aplicación de este principio implica que, aun con autorización expresa, la empresa debe velar por la preservación del mínimo vital del empleado y la parte inembargable del salario, conforme a lo dispuesto por el artículo 149 del Código Sustantivo del Trabajo y la jurisprudencia constitucional.</p>
+
+<p><strong>ARTICULO DECIMOPRIMERO. ACOSO LABORAL:</strong> El EMPLEADOR garantiza la existencia de un Comité de Convivencia Laboral y de canales de denuncia confidenciales, para prevenir, investigar y sancionar actos de acoso o maltrato. En caso de presentarse situaciones de acoso o afectación a la salud mental, se brindará acompañamiento psicológico y orientación jurídica, conforme a la Ley 1010 de 2006 y la Ley 2460 de 2025.</p>
+
+<p><strong>ARTICULO DECIMOSEGUNDO. INTEGRIDAD CONTRACTUAL:</strong> Este contrato sustituye cualquier acuerdo previo, verbal o escrito, entre las partes. Cualquier modificación o adición deberá constar por escrito y estar debidamente firmada por ambas partes.</p>
+
+<p style="margin-top:18px">En constancia, se firma en <span class="field-val">${d.ciudadFirma||'Bogotá'}</span>, el <span class="field-val">${d.fecha}</span>, en dos ejemplares del mismo tenor.</p>`;
   }
   if (d.tipoKey === 'cuenta_ret') {
     return `<h2>Cuenta de Cobro con Retenciones</h2>
