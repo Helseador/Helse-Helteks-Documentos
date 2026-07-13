@@ -190,6 +190,7 @@
 <nav>
   <div class="nav-brand">Documentos <span>Helse & Helteks</span></div>
   <div class="nav-right">
+    <span class="nav-user" id="navGreeting" style="color:#cbd5e1;font-size:13px;"></span>
     <span class="nav-user" id="navUser"></span>
     <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
   </div>
@@ -455,8 +456,21 @@ auth.onAuthStateChanged(async u => {
   }
   currentUser = u;
   document.getElementById('navUser').textContent = u.email;
+
+  // Saludo con hora de Bogotá
+  const hora = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', hour: 'numeric', hour12: false });
+  const h = parseInt(hora);
+  const saludo = h >= 5 && h < 12 ? 'Buenos días' : h >= 12 && h < 18 ? 'Buenas tardes' : 'Buenas noches';
+
+  // Nombre: tomar de Firestore si es admin, o "Director de Tecnología" si es superadmin
   if (u.email === SUPERADMIN_EMAIL) {
+    document.getElementById('navGreeting').textContent = saludo + ', Jose 👋';
     document.getElementById('tabUsuarios').style.display = 'inline-block';
+  } else {
+    db.collection('usuarios').where('email','==',u.email).limit(1).get().then(snap => {
+      const nombre = snap.empty ? u.email : (snap.docs[0].data().nombre?.split(' ')[0] || u.email);
+      document.getElementById('navGreeting').textContent = saludo + ', ' + nombre + ' 👋';
+    });
   }
   loadHistorial();
 });
