@@ -287,26 +287,50 @@
           </div>
         </div>
         <div class="form-divider">Detalles del cobro</div>
+
+        <!-- TOGGLE MODO DE CÁLCULO -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;background:#f1f5f9;border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;font-weight:600;color:#374151;">Calcular desde:</span>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+            <input type="radio" name="r_modo" value="bruto" checked onchange="toggleModoRet()"/> Valor bruto
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+            <input type="radio" name="r_modo" value="neto" onchange="toggleModoRet()"/> Valor neto (lo que recibe)
+          </label>
+        </div>
+
         <div class="form-grid">
           <div class="form-group form-full">
             <label class="fl">Concepto / descripción del servicio *</label>
             <textarea class="fi" id="r_concepto" placeholder="Ej: Pago nómina supervisión…"></textarea>
           </div>
           <div class="form-group">
-            <label class="fl">Valor del servicio (COP) *</label>
-            <input class="fi" id="r_valor" placeholder="Ej: 665000" type="number"/>
+            <label class="fl" id="r_valor_label">Valor del servicio (bruto) *</label>
+            <input class="fi" id="r_valor" placeholder="Ej: 800000" type="number" oninput="calcularRet()"/>
           </div>
           <div class="form-group">
             <label class="fl">% Retención en la fuente</label>
-            <input class="fi" id="r_retencion" placeholder="6" type="number" value="6"/>
+            <input class="fi" id="r_retencion" placeholder="6" type="number" value="6" oninput="calcularRet()"/>
           </div>
           <div class="form-group">
             <label class="fl">% ReteICA</label>
-            <input class="fi" id="r_reteica" placeholder="9.66" type="number" value="9.66"/>
+            <input class="fi" id="r_reteica" placeholder="9.66" type="number" value="9.66" oninput="calcularRet()"/>
           </div>
           <div class="form-group">
             <label class="fl">Ciudad</label>
             <input class="fi" id="r_ciudad" placeholder="Bogotá" value="Bogotá"/>
+          </div>
+        </div>
+
+        <!-- PREVIEW DEL CÁLCULO -->
+        <div id="r_preview" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 16px;margin-top:4px;">
+          <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:8px;">Vista previa del cálculo</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;color:#374151;">
+            <span>Valor bruto:</span>       <span id="prev_bruto" style="font-weight:600;text-align:right"></span>
+            <span id="prev_ret_label">Retención en la fuente:</span> <span id="prev_ret" style="text-align:right;color:#dc2626"></span>
+            <span id="prev_ica_label">ReteICA:</span>                <span id="prev_ica" style="text-align:right;color:#dc2626"></span>
+            <span style="font-weight:700;border-top:1px solid #bbf7d0;padding-top:6px">Neto a pagar:</span>
+            <span id="prev_neto" style="font-weight:700;color:#166534;text-align:right;border-top:1px solid #bbf7d0;padding-top:6px"></span>
           </div>
         </div>
       </div>
@@ -594,6 +618,56 @@ function showUserAlert(msg, type) {
   setTimeout(() => el.style.display = 'none', 5000);
 }
 
+// ===== RETENCIONES: TOGGLE Y CÁLCULO EN TIEMPO REAL =====
+function toggleModoRet() {
+  const modo = document.querySelector('input[name="r_modo"]:checked')?.value || 'bruto';
+  const label = document.getElementById('r_valor_label');
+  if (modo === 'neto') {
+    label.textContent = 'Valor neto a recibir *';
+    document.getElementById('r_valor').placeholder = 'Ej: 730000';
+  } else {
+    label.textContent = 'Valor del servicio (bruto) *';
+    document.getElementById('r_valor').placeholder = 'Ej: 800000';
+  }
+  calcularRet();
+}
+
+function calcularRet() {
+  const modo = document.querySelector('input[name="r_modo"]:checked')?.value || 'bruto';
+  const inputVal = parseFloat(document.getElementById('r_valor').value) || 0;
+  const ret = parseFloat(document.getElementById('r_retencion').value) || 0;
+  const ica = parseFloat(document.getElementById('r_reteica').value) || 0;
+  const preview = document.getElementById('r_preview');
+
+  if (!inputVal || inputVal <= 0) { preview.style.display = 'none'; return; }
+
+  const fmt = n => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0}).format(n);
+
+  let bruto, descRet, descIca, neto;
+
+  if (modo === 'bruto') {
+    bruto   = inputVal;
+    descRet = Math.round(bruto * ret / 100);
+    descIca = Math.round(bruto * ica / 100);
+    neto    = bruto - descRet - descIca;
+  } else {
+    // Cálculo inverso: neto = bruto * (1 - ret/100 - ica/100)
+    // → bruto = neto / (1 - ret/100 - ica/100)
+    const factor = 1 - (ret / 100) - (ica / 100);
+    if (factor <= 0) { preview.style.display = 'none'; return; }
+    bruto   = Math.round(inputVal / factor);
+    descRet = Math.round(bruto * ret / 100);
+    descIca = Math.round(bruto * ica / 100);
+    neto    = bruto - descRet - descIca;
+  }
+
+  document.getElementById('prev_bruto').textContent = fmt(bruto);
+  document.getElementById('prev_ret').textContent   = '− ' + fmt(descRet) + ' (' + ret + '%)';
+  document.getElementById('prev_ica').textContent   = '− ' + fmt(descIca) + ' (' + ica + '%)';
+  document.getElementById('prev_neto').textContent  = fmt(neto);
+  preview.style.display = 'block';
+}
+
 // ===== DOC TYPE SELECTION =====
 function selectDoc(type, btn) {
   document.querySelectorAll('.doc-type-btn').forEach(b => b.classList.remove('selected'));
@@ -640,11 +714,22 @@ function getData() {
     };
   }
   if (t === 'cuenta_ret') {
-    const valor = n('r_valor');
-    const ret   = n('r_retencion');
-    const ica   = n('r_reteica');
-    const descRet = Math.round(valor * ret / 100);
-    const descIca = Math.round(valor * ica / 100);
+    const inputVal = n('r_valor');
+    const ret      = n('r_retencion');
+    const ica      = n('r_reteica');
+    const modo     = document.querySelector('input[name="r_modo"]:checked')?.value || 'bruto';
+
+    let valor, descRet, descIca;
+    if (modo === 'bruto') {
+      valor   = inputVal;
+      descRet = Math.round(valor * ret / 100);
+      descIca = Math.round(valor * ica / 100);
+    } else {
+      const factor = 1 - (ret / 100) - (ica / 100);
+      valor   = Math.round(inputVal / factor);
+      descRet = Math.round(valor * ret / 100);
+      descIca = Math.round(valor * ica / 100);
+    }
     return {
       tipo: 'Cuenta de Cobro con Retenciones',
       tipoKey: 'cuenta_ret',
