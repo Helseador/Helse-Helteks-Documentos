@@ -314,7 +314,7 @@
           </div>
           <div class="form-group">
             <label class="fl">% ReteICA</label>
-            <input class="fi" id="r_reteica" placeholder="9.66" type="number" value="9.66" oninput="calcularRet()"/>
+            <input class="fi" id="r_reteica" placeholder="9.66" type="number" value="9.66" oninput="calcularRet()"/> <small style="color:#64748b;font-size:11px">por mil (‰)</small>
           </div>
           <div class="form-group">
             <label class="fl">Ciudad</label>
@@ -648,16 +648,16 @@ function calcularRet() {
   if (modo === 'bruto') {
     bruto   = inputVal;
     descRet = Math.round(bruto * ret / 100);
-    descIca = Math.round(bruto * ica / 100);
+    descIca = Math.round(bruto * ica / 1000);
     neto    = bruto - descRet - descIca;
   } else {
-    // Cálculo inverso: neto = bruto * (1 - ret/100 - ica/100)
-    // → bruto = neto / (1 - ret/100 - ica/100)
-    const factor = 1 - (ret / 100) - (ica / 100);
+    // Cálculo inverso: neto = bruto * (1 - ret/100 - ica/1000)
+    // → bruto = neto / (1 - ret/100 - ica/1000)
+    const factor = 1 - (ret / 100) - (ica / 1000);
     if (factor <= 0) { preview.style.display = 'none'; return; }
     bruto   = Math.round(inputVal / factor);
     descRet = Math.round(bruto * ret / 100);
-    descIca = Math.round(bruto * ica / 100);
+    descIca = Math.round(bruto * ica / 1000);
     neto    = bruto - descRet - descIca;
   }
 
@@ -723,12 +723,12 @@ function getData() {
     if (modo === 'bruto') {
       valor   = inputVal;
       descRet = Math.round(valor * ret / 100);
-      descIca = Math.round(valor * ica / 100);
+      descIca = Math.round(valor * ica / 1000);
     } else {
-      const factor = 1 - (ret / 100) - (ica / 100);
+      const factor = 1 - (ret / 100) - (ica / 1000);
       valor   = Math.round(inputVal / factor);
       descRet = Math.round(valor * ret / 100);
-      descIca = Math.round(valor * ica / 100);
+      descIca = Math.round(valor * ica / 1000);
     }
     return {
       tipo: 'Cuenta de Cobro con Retenciones',
